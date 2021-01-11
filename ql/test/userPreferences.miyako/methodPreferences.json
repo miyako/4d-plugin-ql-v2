@@ -189,21 +189,21 @@
 		"stamp": "2019-12-13T04:37:40.619Z"
 	},
 	"Sources/Methods/TEST_thumbnail.4dm": {
-		"startSelection": 35,
-		"endSelection": 0,
+		"startSelection": 9,
+		"endSelection": 9,
 		"firstSelectedLine": 5,
-		"lastSelectedLine": 0,
+		"lastSelectedLine": 5,
 		"folding": [],
 		"bookmarks": [],
-		"stamp": "2021-01-11T02:42:43.156Z"
+		"stamp": "2021-01-11T05:12:29.054Z"
 	},
 	"Sources/Methods/TEST_preview.4dm": {
 		"startSelection": 0,
 		"endSelection": 0,
-		"firstSelectedLine": 6,
-		"lastSelectedLine": 6,
+		"firstSelectedLine": 1,
+		"lastSelectedLine": 1,
 		"folding": [],
 		"bookmarks": [],
-		"stamp": "2021-01-11T05:02:34.230Z"
+		"stamp": "2021-01-11T05:12:29.054Z"
 	}
 }

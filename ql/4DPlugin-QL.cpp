@@ -251,12 +251,7 @@ void ob_set_i(PA_ObjectRef obj, NSString *_key, PA_Picture value) {
     }
 }
 
-static void ql_get_properties(QLPreviewRef preview, PA_ObjectRef arg2) {
-    
-    ob_set_s(arg2, @"DisplayBundleID", (NSString *)QLPreviewGetDisplayBundleID(preview));
-    ob_set_s(arg2, @"PreviewContentType", (NSString *)QLPreviewCopyPreviewContentType(preview));
-    
-    CFDictionaryRef properties = QLPreviewCopyProperties(preview);
+static void ql_get_properties(CFDictionaryRef properties, PA_ObjectRef arg2) {
     
     if(properties) {
         
@@ -314,7 +309,7 @@ static void ql_get_properties(QLPreviewRef preview, PA_ObjectRef arg2) {
             }
             
         }];
-        CFRelease(properties);
+        
     }
     
 }
@@ -336,6 +331,7 @@ void QL_Create_preview(PA_PluginParameters params) {
             switch (get_api_version()) {
                 case api_version_catalina:
                 {
+                    /*
                     QLPreviewRef preview = QLPreviewCreate(kCFAllocatorDefault, url, options);
                     if(preview) {
                         QLPreview *qlpreview = [[QLPreview alloc] initWithQLPreviewRef:preview];
@@ -344,8 +340,13 @@ void QL_Create_preview(PA_PluginParameters params) {
                             if(data) {
                                 
                                 if(arg2) {
+                     
+                     ob_set_s(arg2, @"DisplayBundleID", (NSString *)QLPreviewGetDisplayBundleID(preview));
+                     ob_set_s(arg2, @"PreviewContentType", (NSString *)QLPreviewCopyPreviewContentType(preview));
 
-                                    ql_get_properties(preview, arg2);
+                     CFDictionaryRef properties = QLPreviewCopyProperties(preview);
+                     ql_get_properties(properties, arg2);
+                     CFRelease(properties);
                                 }
                                 
                                 PA_ReturnBlob(params, (void *)[data bytes], (PA_long32)[data length]);
@@ -355,6 +356,7 @@ void QL_Create_preview(PA_PluginParameters params) {
                         }
                         QLPreviewClose(preview);
                     }
+                     */
                 }
                     break;
                     
@@ -364,6 +366,10 @@ void QL_Create_preview(PA_PluginParameters params) {
                     if(qlpreview) {
                         NSData *data = [qlpreview synchronousGetData];
                         if(data) {
+                            
+                            NSDictionary *properties = [qlpreview getProperties];
+                            ql_get_properties((CFDictionaryRef)properties, arg2);
+                            
                             PA_ReturnBlob(params, (void *)[data bytes], (PA_long32)[data length]);
                             didReturn = true;
                         }
