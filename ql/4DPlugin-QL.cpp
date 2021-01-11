@@ -331,7 +331,6 @@ void QL_Create_preview(PA_PluginParameters params) {
             switch (get_api_version()) {
                 case api_version_catalina:
                 {
-                    /*
                     QLPreviewRef preview = QLPreviewCreate(kCFAllocatorDefault, url, options);
                     if(preview) {
                         QLPreview *qlpreview = [[QLPreview alloc] initWithQLPreviewRef:preview];
@@ -356,7 +355,7 @@ void QL_Create_preview(PA_PluginParameters params) {
                         }
                         QLPreviewClose(preview);
                     }
-                     */
+ 
                 }
                     break;
                     
