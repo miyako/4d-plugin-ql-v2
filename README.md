@@ -6,10 +6,3 @@
 # 4d-plugin-ql-v2
 Use QuickLook API to generate thumbnails and previews.
 
-Not compatible with Big Sur; the private APIs seem to be removed in the 11.1 SDK.
-
-* `QLPreviewClose`
-* `QLPreviewCopyPreviewContentType`
-* `QLPreviewCopyProperties`
-* `QLPreviewCreate`
-* `QLPreviewGetDisplayBundleID`
