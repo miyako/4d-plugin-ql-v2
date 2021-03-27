@@ -132,11 +132,11 @@ typedef struct __QLPreview *QLPreviewRef;
 
 #pragma mark catalina
 
-QL_PRIVATE_EXPORT QLPreviewRef QLPreviewCreate(CFAllocatorRef, CFURLRef, CFDictionaryRef);
-QL_PRIVATE_EXPORT void QLPreviewClose(QLPreviewRef);
-QL_PRIVATE_EXPORT CFDictionaryRef QLPreviewCopyProperties(QLPreviewRef);
-QL_PRIVATE_EXPORT CFStringRef QLPreviewCopyPreviewContentType(QLPreviewRef);
-QL_PRIVATE_EXPORT CFStringRef QLPreviewGetDisplayBundleID(QLPreviewRef);
+//QL_PRIVATE_EXPORT QLPreviewRef QLPreviewCreate(CFAllocatorRef, CFURLRef, CFDictionaryRef);
+//QL_PRIVATE_EXPORT void QLPreviewClose(QLPreviewRef);
+//QL_PRIVATE_EXPORT CFDictionaryRef QLPreviewCopyProperties(QLPreviewRef);
+//QL_PRIVATE_EXPORT CFStringRef QLPreviewCopyPreviewContentType(QLPreviewRef);
+//QL_PRIVATE_EXPORT CFStringRef QLPreviewGetDisplayBundleID(QLPreviewRef);
 
 #pragma mark before catalina
 
