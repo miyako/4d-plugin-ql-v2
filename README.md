@@ -72,5 +72,5 @@ If the preview document is a single page, the data is returned in ``preview``. Y
 
 If the preview document has several pages, a container HTML is returned in ``preview``. The ``cid`` and `data` (raw picture) of each page is returned in  ``options.Attachments[]``. 
 
-Note that QuickLook is actually a **collection of generators and viewers**. A "preview" is not limited to image, it can be audio, video, etc. Likewise, the viewer could be a web browser engine, PDF or text viewer, even a media player or stream player (``baseBundlePath`` indicates the type of viewer). 
+Note that QuickLook is actually a **collection of generators and viewers**. A "preview" is not limited to image, it can be audio, video, etc. Likewise, the viewer could be a web browser engine, PDF or text viewer, even a media player or stream player (``BaseBundlePath`` indicates the type of viewer). 
 
