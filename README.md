@@ -6,3 +6,4 @@
 # 4d-plugin-ql-v2
 Use QuickLook API to generate thumbnails and previews.
 
+**Note**: Catalina had an undocumented API called `QLPreviewCopyProperties`. it was replaced in Big Sur by `QLPreview.getProperties`.
