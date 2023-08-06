@@ -61,6 +61,9 @@ PageElementXPath
 MimeType
 Width
 AllowJavascript
+Attachments[]
+Attachments[].cid
+Attachments[].data
 ```
 
 For documents with multiple pages, an HTML preview is generally returned.
