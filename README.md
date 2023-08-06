@@ -53,21 +53,21 @@ preview|BLOB|
 Possible properties of ``options`` on output:
 
 ```
-height
+Height
 PDFStyle (0=standard, 3=right, 4=left)
-baseBundlePath (converted to HFS)
-textEncoding
-pageElementXPath
-mimeType
-width
-allowJavascript
+BaseBundlePath (converted to HFS)
+TextEncoding
+PageElementXPath
+MimeType
+Width
+AllowJavascript
 ```
 
 For documents with multiple pages, an HTML preview is generally returned.
 
-If the preview document is a single page, the data is returned in ``preview``. You can use ``mimeType`` to find out its internal format. The generator decides what kind of preview to draw. For example, Microsoft Office generators tend to create JPG. Apple iWorks tend to create PDF.
+If the preview document is a single page, the data is returned in ``preview``. You can use ``MimeType`` to find out its internal format. The generator decides what kind of preview to draw. For example, Microsoft Office generators tend to create JPG. Apple iWorks tend to create PDF.
 
-If the preview document has several pages, the data is returned in ``data`` and a container HTML is returned in ``preview``. The ``cid`` of each page is returned in  ``type``. 
+If the preview document has several pages, a container HTML is returned in ``preview``. The ``cid`` and `data` (raw picture) of each page is returned in  ``options.Attachments[]``. 
 
 Note that QuickLook is actually a **collection of generators and viewers**. A "preview" is not limited to image, it can be audio, video, etc. Likewise, the viewer could be a web browser engine, PDF or text viewer, even a media player or stream player (``baseBundlePath`` indicates the type of viewer). 
 
