@@ -1,2 +1,4 @@
 ql/build/*
 ql/test/userPreferences.*
+ql/test/Data/*
+ql/test/Project/DerivedData/*

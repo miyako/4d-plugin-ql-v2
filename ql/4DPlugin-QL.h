@@ -127,6 +127,8 @@ typedef struct __QLPreview *QLPreviewRef;
 - (id)initWithQLPreviewRef:(struct __QLPreview *)arg1;
 
 @property QLPreviewRef previewRef;
+@property (readonly)NSString *displayBundleID;
+@property (readonly)NSString *previewContentType;
 
 @end
 
@@ -134,8 +136,8 @@ typedef struct __QLPreview *QLPreviewRef;
 
 //QL_PRIVATE_EXPORT QLPreviewRef QLPreviewCreate(CFAllocatorRef, CFURLRef, CFDictionaryRef);
 //QL_PRIVATE_EXPORT void QLPreviewClose(QLPreviewRef);
-//QL_PRIVATE_EXPORT CFDictionaryRef QLPreviewCopyProperties(QLPreviewRef);
-//QL_PRIVATE_EXPORT CFStringRef QLPreviewCopyPreviewContentType(QLPreviewRef);
+QL_PRIVATE_EXPORT CFDictionaryRef QLPreviewCopyProperties(QLPreviewRef);
+QL_PRIVATE_EXPORT CFStringRef QLPreviewCopyPreviewContentType(QLPreviewRef);
 //QL_PRIVATE_EXPORT CFStringRef QLPreviewGetDisplayBundleID(QLPreviewRef);
 
 #pragma mark before catalina

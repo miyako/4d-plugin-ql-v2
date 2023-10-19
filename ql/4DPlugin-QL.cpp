@@ -366,7 +366,16 @@ void QL_Create_preview(PA_PluginParameters params) {
                     if(qlpreview) {
                         NSData *data = [qlpreview synchronousGetData];
                         if(data) {
-                            
+                                
+                            if(arg2) {
+                                
+                                NSString *displayBundleID = [qlpreview displayBundleID];
+                                NSString *previewContentType = [qlpreview previewContentType];
+                                
+                                ob_set_s(arg2, @"DisplayBundleID", displayBundleID);
+                                ob_set_s(arg2, @"PreviewContentType", (NSString *)previewContentType);
+                            }
+
                             NSDictionary *properties = [qlpreview getProperties];
                             ql_get_properties((CFDictionaryRef)properties, arg2);
                             
