@@ -18,6 +18,9 @@ Case of
 		BLOB TO PICTURE:C682($blob; $picture; $info.PreviewContentType)
 		WRITE PICTURE FILE:C680($rootPath+"preview.pdf"; $picture)
 		
+		TRANSFORM PICTURE:C988($picture; Scale:K61:2; 4; 4)
+		WRITE PICTURE FILE:C680($rootPath+"preview.jpg"; $picture; "public.jpeg")
+		
 	: ($info.MimeType="text/html")
 		CREATE FOLDER:C475($rootPath; *)
 		For each ($attachment; $info.Attachments)
