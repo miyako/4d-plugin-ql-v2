@@ -84,13 +84,16 @@ void QL_Create_thumbnail(PA_PluginParameters params) {
             }else{
                 NSString *path = (NSString *)CFURLCopyFileSystemPath(url, kCFURLPOSIXPathStyle);
                 if(path) {
-                    NSImage *image = [[NSWorkspace sharedWorkspace]iconForFile:path];
-                    [image setSize:NSMakeSize(maxSize.width, maxSize.height)];
-                    NSData *data = [image TIFFRepresentation];
-                    PA_ReturnPicture(params, PA_CreatePicture((void *)[data bytes],
-                                                              (PA_long32)[data length]));
+                    @autoreleasepool {
+                        NSImage *image = [[NSWorkspace sharedWorkspace]iconForFile:path];
+                        [image setSize:NSMakeSize(maxSize.width, maxSize.height)];
+                        NSData *data = [image TIFFRepresentation];
+                        PA_ReturnPicture(params, PA_CreatePicture((void *)[data bytes],
+                                                                  (PA_long32)[data length]));
+                        [path release];
+                    }
                     didReturn = true;
-                    [path release];
+                    
                 }
             }
             CFRelease(options);
