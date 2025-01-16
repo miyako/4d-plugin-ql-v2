@@ -265,14 +265,39 @@ static void ql_get_properties(CFDictionaryRef properties, PA_ObjectRef arg2) {
             [(NSDictionary *)attachments enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
                 
                 NSString *cid = (NSString *)key;
+                CFDictionaryRef attachment = (CFDictionaryRef)obj;
+                
                 PA_ObjectRef objAttachment = PA_CreateObject();
                 ob_set_s(objAttachment, @"cid", cid);
                 
-                CFDictionaryRef attachment = (CFDictionaryRef)obj;
-                NSData *_data = (NSData *)CFDictionaryGetValue(attachment, kQLPreviewPropertyAttachmentDataKey);
-                ob_set_i(objAttachment, @"data", PA_CreatePicture((void *)[_data bytes], (PA_long32)[_data length]));
-                collection_push(colAttachments, objAttachment);
+                NSString *encoding = (NSString *)CFDictionaryGetValue(attachment, kQLPreviewPropertyTextEncodingNameKey);
+                ob_set_s(objAttachment, @"encoding", encoding);
                 
+                NSString *type = (NSString *)CFDictionaryGetValue(attachment, kQLPreviewPropertyMIMETypeKey);
+                ob_set_s(objAttachment, @"type", type);
+                
+                NSData *data = (NSData *)CFDictionaryGetValue(attachment, kQLPreviewPropertyAttachmentDataKey);
+                
+                if(data) {
+                    if(([type hasPrefix:@"text/"])
+                       || ([type hasSuffix:@"/javascript"])
+                       || ([cid hasSuffix:@".css"])
+                       || ([cid hasSuffix:@".js"])
+                       || ([cid hasSuffix:@".html"])){
+                        
+                        NSStringEncoding ie = CFStringConvertEncodingToNSStringEncoding(CFStringConvertIANACharSetNameToEncoding((CFStringRef)encoding));
+                        NSString *text = [[NSString alloc]initWithData:data encoding:ie];
+                        if(text) {
+                            ob_set_s(objAttachment, @"data", text);
+                            [text release];
+                        }
+                    }else{
+                        PA_Picture p = PA_CreatePicture((void *)[data bytes], (PA_long32)[data length]);
+                        ob_set_i(objAttachment, @"data", p);
+                    }
+                }
+                collection_push(colAttachments, objAttachment);
+
             }];
             ob_set_c(arg2, @"Attachments", colAttachments);
         }
