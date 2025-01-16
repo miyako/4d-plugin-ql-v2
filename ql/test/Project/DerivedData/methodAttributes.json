@@ -1,7 +1,7 @@
 {
 	"methods": {
 		"TEST_preview": {
-			"timeStamp": "2025-01-16T06:51:03Z"
+			"timeStamp": "2025-01-16T07:09:09Z"
 		},
 		"TEST_thumbnail": {
 			"timeStamp": "2024-06-10T06:47:11Z"
@@ -11,6 +11,16 @@
 		},
 		"html_preview_renderer": {
 			"timeStamp": "2025-01-16T06:49:16Z",
+			"attributes": {
+				"invisible": true,
+				"preemptive": "capable"
+			}
+		},
+		"issue_002": {
+			"timeStamp": "2025-01-16T07:09:46Z"
+		},
+		"pdf_preview_renderer": {
+			"timeStamp": "2025-01-16T07:08:40Z",
 			"attributes": {
 				"invisible": true,
 				"preemptive": "capable"
