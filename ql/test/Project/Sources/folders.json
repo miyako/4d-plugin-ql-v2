@@ -1,3 +1,9 @@
 {
+	"renderers": {
+		"methods": [
+			"html_preview_renderer",
+			"pdf_preview_renderer"
+		]
+	},
 	"trash": {}
 }

@@ -302,13 +302,13 @@ static void ql_get_properties(CFDictionaryRef properties, PA_ObjectRef arg2) {
             ob_set_c(arg2, @"Attachments", colAttachments);
         }
         
-        __block NSArray *stringKeys = @[@"PDFStyle",
+        __block NSArray *stringKeys = @[/*@"PDFStyle",*/
                                         @"TextEncoding",
                                         @"PageElementXPath",
                                         @"MimeType"];
         __block NSArray *pathKeys = @[@"BaseBundlePath"];
-        __block NSArray *numberKeys = @[@"Height", @"Width"];
-        __block NSArray *boolKeys = @[@"AllowJavascript"];
+        __block NSArray *numberKeys = @[@"Height", @"Width", @"PDFStyle"];
+        __block NSArray *boolKeys = @[@"AllowJavascript", @"AllowNetworkAccess"];
         
         [(NSDictionary *)properties enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
             
