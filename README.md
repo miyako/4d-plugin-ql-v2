@@ -4,48 +4,52 @@
 ![downloads](https://img.shields.io/github/downloads/miyako/4d-plugin-ql-v2/total)
 
 # 4d-plugin-ql-v2
-Use QuickLook API to generate thumbnails and previews.
 
-## Overview
+A 4D plugin that lets your 4D code generate **thumbnails** and **full previews** for (almost) any file on disk — PDFs, Office documents, images, Keynote/Pages/Numbers files, source code, archives, and anything else your Mac has a QuickLook generator for — without writing a single line of file-format-specific parsing code.
 
-**QL** is a 4D plugin that lets your 4D code generate **thumbnails** and **full previews** for (almost) any file on disk — PDFs, Office documents, images, Keynote/Pages/Numbers files, source code, archives, and anything else your Mac has a QuickLook generator for — without writing a single line of file-format-specific parsing code.
+Under the hood it drives macOS's own **QuickLook** engine (the same one behind the Spacebar preview in the Finder), so if Quick Look can show it, this plugin can hand it to you as a `Picture` or a `Blob`.
 
-Under the hood it drives macOS's own **QuickLook** engine (the same one behind Spacebar-preview in the Finder), so if Quick Look can show it, this plugin can hand it to you as a `Picture` or a `Blob`.
+| Command | Returns | Purpose |
+|---|---|---|
+| [`QL Create thumbnail`](#ql-create-thumbnail) | Picture | Generates an icon-sized thumbnail for a file |
+| [`QL Create preview`](#ql-create-preview) | Blob | Generates a full, rich preview for a file, plus metadata describing it |
 
-> Because it relies on Apple's QuickLook engine, results depend on which QuickLook generators are installed on the machine running the code (built‑in system generators, plus any third‑party ones the user has installed, e.g. for `.key`/`.pages`/`.numbers`, `.psd`, source code, etc.).
+**Platforms:** macOS only (Intel & Apple Silicon).
 
 ---
 
-## `QL Create thumbnail`
+## Requirements & platform notes
 
-Generates a quick thumbnail image for a file — the same kind of image the Finder shows in icon view or Spacebar quick preview.
+Read this before using either command — results depend entirely on what QuickLook itself can do on the machine running the code.
 
-### Syntax
+- Both commands rely on **Apple's QuickLook engine**, so results depend on which QuickLook generators are installed — built-in system generators, plus any third-party ones the user has (e.g. for `.key`/`.pages`/`.numbers`, `.psd`, source code, etc.). The same file can produce a richer or plainer preview on different machines depending on what's installed.
+- **macOS 11 (Big Sur) or later** is required — these commands rely on internal QuickLook APIs that Apple has changed across OS releases, and behave differently (or aren't available) on earlier macOS versions or on Windows.
+- Neither command raises a 4D error on failure — see [Error handling & troubleshooting](#error-handling--troubleshooting) for how to guard against that.
 
-```
-QL Create thumbnail ( path ) -> Function result
-```
+---
+
+## QL Create thumbnail
+
+**QL Create thumbnail ( path ) → Picture**
 
 | Parameter | Type | Description |
 |---|---|---|
 | `path` | Text | Full path of the file to generate a thumbnail for. |
 | *(2nd parameter)* | — | **Obsolete.** Previously accepted a size; it is now ignored. Thumbnails are always generated at a maximum of **1024 × 1024 px**. Passing it does nothing and can be omitted. |
-| **Function result** | Picture | The generated thumbnail. If no thumbnail could be generated at all, an empty picture is returned. |
+| Result | Picture | The generated thumbnail. If no thumbnail could be generated at all, an empty picture is returned. |
 
 ### Description
 
-`QL Create thumbnail` asks QuickLook for a thumbnail of the file at `path`. If the file type has no QuickLook thumbnail generator (or generation fails for some other reason), the command **automatically falls back to the file's Finder icon** instead, so the command practically always returns *some* image for a valid, existing file.
+`QL Create thumbnail` asks QuickLook for a thumbnail of the file at `path`. If the file type has no QuickLook thumbnail generator (or generation fails for some other reason), the command **automatically falls back to the file's Finder icon** instead, so it practically always returns *some* image for a valid, existing file.
 
-The returned picture is always encoded as TIFF, sized to fit within 1024 × 1024 px (aspect ratio preserved by QuickLook itself).
+The returned picture is always encoded as **TIFF**, sized to fit within 1024 × 1024 px (aspect ratio preserved by QuickLook itself).
 
 ### Example
 
 ```4d
 $path:=Folder(fk desktop folder).file("sample.png").platformPath
-
 C_PICTURE($picture)
 $picture:=QL Create thumbnail($path)
-
 FORM SET INPUT($picture)  // e.g. drop into a picture variable/field
 ```
 
@@ -53,7 +57,6 @@ Batch/stress-test style usage (from the plugin's own test suite):
 
 ```4d
 $path:=System folder(Current resources folder)+"sample.png"
-
 C_PICTURE($picture)
 For ($i; 1; 1000)
 	$picture:=QL Create thumbnail($path)  //$2 obsolete; size is always 1024x1024
@@ -62,21 +65,15 @@ End for
 
 ---
 
-## `QL Create preview`
+## QL Create preview
 
-Generates a **full QuickLook preview** of a file — the richer, "Space-bar full preview" rendering, rather than just an icon-sized thumbnail. Also returns metadata describing exactly what was produced, since the format of the preview payload varies by file type.
-
-### Syntax
-
-```
-QL Create preview ( path ; info ) -> Function result
-```
+**QL Create preview ( path ; info ) → Blob**
 
 | Parameter | Type | Description |
 |---|---|---|
 | `path` | Text | Full path of the file to preview. |
 | `info` | Object | Pass an **empty object** (`New object` or `{}`). The command fills it in (objects are shared by reference in 4D, so you don't need a special "by reference" syntax — just pass the variable). See [The `info` object](#the-info-object) below. |
-| **Function result** | Blob | The raw preview payload. Its format depends on the file type — see below. If preview generation fails, an empty blob is returned. |
+| Result | Blob | The raw preview payload. Its format depends on the file type — see below. If preview generation fails, an empty blob is returned. |
 
 ### Description
 
@@ -84,9 +81,8 @@ Depending on the source file type, QuickLook returns the preview in one of two s
 
 - **PDF-style preview** (`info.PreviewContentType = "com.adobe.pdf"`)
   The `Blob` **is** a PDF file's raw bytes. Typical files that produce this: PDFs, and some other document types QuickLook chooses to render as PDF.
-
 - **HTML-style preview** (`info.MimeType = "text/html"`)
-  The `Blob` is a **UTF‑8 HTML document**. This is what you'll get for most Office documents (`.docx`, `.xlsx`, `.pptx`), iWork documents (`.key`, `.pages`, `.numbers`), and many others. The HTML references embedded resources (images, CSS, JS) via `cid:` URLs; those resources are **not** inside the blob — they're returned separately, one entry per resource, in `info.Attachments` (see below). You are responsible for writing the HTML and its attachments to disk (or otherwise resolving the `cid:` references) before you can display it — see [`html_preview_renderer`](#html_preview_renderer) below for a ready-made implementation.
+  The `Blob` is a **UTF-8 HTML document**. This is what you'll get for most Office documents (`.docx`, `.xlsx`, `.pptx`), iWork documents (`.key`, `.pages`, `.numbers`), and many others. The HTML references embedded resources (images, CSS, JS) via `cid:` URLs; those resources are **not** inside the blob — they're returned separately, one entry per resource, in `info.Attachments` (see below). You are responsible for writing the HTML and its attachments to disk (or otherwise resolving the `cid:` references) before you can display it — see [`html_preview_renderer`](#html_preview_renderer) below for a ready-made implementation.
 
 ### The `info` object
 
@@ -119,11 +115,9 @@ Each element of `Attachments` is an object:
 
 ```4d
 $path:=Get 4D folder(Current resources folder)+"sample.key"
-
 C_BLOB($blob)
 $info:=New object
 $blob:=QL Create preview($path; $info)
-
 Case of
 	: ($info.PreviewContentType="com.adobe.pdf")
 		// PDF-style preview -> $blob is raw PDF bytes
@@ -131,14 +125,12 @@ Case of
 		$rootFolder:=Folder(fk desktop folder).folder("test_pdf")
 		$file:=pdf_preview_renderer($rootFolder; $blob; $info)
 		OPEN URL($file.platformPath; "Safari")
-
 	: ($info.MimeType="text/html")
 		// HTML-style preview -> $blob is HTML text + $info.Attachments
 		var $rootFolder : 4D.Folder
 		$rootFolder:=Folder(fk desktop folder).folder("test_key")
 		$file:=html_preview_renderer($rootFolder; $blob; $info)
 		OPEN URL($file.platformPath; "Safari")  //local path access must be enabled in Safari
-
 End case
 ```
 
@@ -152,33 +144,25 @@ End case
 
 Turns a PDF-style preview blob into a real `.pdf` file on disk, plus a scaled-down `.jpg` for quick display.
 
-```
-pdf_preview_renderer ( rootFolder ; blob ; info ) -> Function result
-```
+**pdf_preview_renderer ( rootFolder ; blob ; info ) → 4D.File**
 
 | Parameter | Type | Description |
 |---|---|---|
 | `rootFolder` | 4D.Folder | Destination folder (created if it doesn't exist). |
 | `blob` | Blob | The blob returned by `QL Create preview` — must be a PDF-style preview (`info.PreviewContentType = "com.adobe.pdf"`). |
 | `info` | Object | The `info` object filled in by `QL Create preview` for the same call. |
-| **Function result** | 4D.File | The generated `preview.jpg` file. |
+| Result | 4D.File | The generated `preview.jpg` file. |
 
 ```4d
 #DECLARE($rootFolder : 4D.Folder; $blob : Blob; $info : Object) : 4D.File
-
 ASSERT($info.PreviewContentType="com.adobe.pdf")
-
 $rootFolder.create()
-
 var $picture : Picture
 BLOB TO PICTURE($blob; $picture; $info.PreviewContentType)
 WRITE PICTURE FILE($rootFolder.file("preview.pdf").platformPath; $picture)
-
 $file:=$rootFolder.file("preview.jpg")
-
 TRANSFORM PICTURE($picture; Scale; 4; 4)
 WRITE PICTURE FILE($file.platformPath; $picture; "public.jpeg")
-
 return $file
 ```
 
@@ -186,40 +170,31 @@ return $file
 
 Turns an HTML-style preview (blob + `info.Attachments`) into a browsable folder: writes `index.html`, recreates the attachment folder structure from each attachment's `cid`, writes each attachment to disk (text files as text, images via `WRITE PICTURE FILE`), and rewrites every `cid:` link in the HTML/CSS to a relative path.
 
-```
-html_preview_renderer ( rootFolder ; blob ; info ) -> Function result
-```
+**html_preview_renderer ( rootFolder ; blob ; info ) → 4D.File**
 
 | Parameter | Type | Description |
 |---|---|---|
 | `rootFolder` | 4D.Folder | Destination folder (created if it doesn't exist). |
 | `blob` | Blob | The blob returned by `QL Create preview` — must be an HTML-style preview (`info.MimeType = "text/html"`). |
 | `info` | Object | The `info` object filled in by `QL Create preview` for the same call (its `Attachments` collection is what gets written to disk). |
-| **Function result** | 4D.File | The generated `index.html` file. |
+| Result | 4D.File | The generated `index.html` file. |
 
 ```4d
 #DECLARE($rootFolder : 4D.Folder; $blob : Blob; $info : Object) : 4D.File
-
 ASSERT($info.MimeType="text/html")
-
 $rootFolder.create()
-
 var $cid; $type : Text
 var $data : Variant  //Blob or Text
 var $pathComponents : Collection
 var $attachment : Object
 var $folder : 4D.Folder
-
 For each ($attachment; $info.Attachments)
-
 	$cid:=$attachment.cid
 	$type:=$attachment.type
 	$data:=$attachment.data
 	$pathComponents:=Split string($cid; "/")
-
 	$folder:=$rootFolder.folder($pathComponents[0])
 	$folder.create()
-
 	Case of
 		: ($cid="@.html")
 			$data:=Replace string($data; "src=\"cid:"; "src=\"../"; *)
@@ -234,15 +209,12 @@ For each ($attachment; $info.Attachments)
 			WRITE PICTURE FILE($folder.file($pathComponents[1]).platformPath; $data)
 	End case
 End for each
-
 $data:=Convert to text($blob; "utf-8")
 $data:=Replace string($data; "src=\"cid:"; "src=\"./"; *)
 $data:=Replace string($data; "href=\"cid:"; "href=\"./"; *)
-
 var $file : 4D.File
 $file:=$rootFolder.file("index.html")
 $file.setText($data)
-
 return $file
 ```
 
@@ -255,17 +227,13 @@ return $file
 ```4d
 var $PDF : 4D.File
 $PDF:=File("/RESOURCES/test.pdf")
-
 var $info : Object
 var $blob : Blob
 $info:={}
 $blob:=QL Create preview($PDF.platformPath; $info)
-
 var $rootFolder : 4D.Folder
 $rootFolder:=Folder(fk desktop folder).folder("test_pdf")
-
 $file:=pdf_preview_renderer($rootFolder; $blob; $info)
-
 OPEN URL($file.platformPath; "Safari")
 ```
 
@@ -274,17 +242,13 @@ The exact same pattern works unchanged for `.xlsx`, `.pptx`, `.docx`, `.key`, `.
 ```4d
 var $XLSX : 4D.File
 $XLSX:=File("/RESOURCES/test.xlsx")
-
 var $info : Object
 var $blob : Blob
 $info:={}
 $blob:=QL Create preview($XLSX.platformPath; $info)
-
 var $rootFolder : 4D.Folder
 $rootFolder:=Folder(fk desktop folder).folder("test_xlsx")
-
 $file:=html_preview_renderer($rootFolder; $blob; $info)
-
 OPEN URL($file.platformPath; "Safari")  //local path access must be enabled in Safari
 ```
 
@@ -294,34 +258,51 @@ If you don't know in advance whether a file will render as a PDF-style or HTML-s
 
 ```4d
 $path:=Get 4D folder(Current resources folder)+"sample.key"
-
 C_BLOB($blob)
 $info:=New object
 $blob:=QL Create preview($path; $info)
-
 Case of
 	: ($info.PreviewContentType="com.adobe.pdf")
 		var $rootFolder : 4D.Folder
 		$rootFolder:=Folder(fk desktop folder).folder("test_pdf")
 		$file:=pdf_preview_renderer($rootFolder; $blob; $info)
 		OPEN URL($file.platformPath; "Safari")
-
 	: ($info.MimeType="text/html")
 		var $rootFolder : 4D.Folder
 		$rootFolder:=Folder(fk desktop folder).folder("test_key")
 		$file:=html_preview_renderer($rootFolder; $blob; $info)
 		OPEN URL($file.platformPath; "Safari")  //local path access must be enabled in Safari
-
 End case
 ```
 
 ---
 
-## Notes, limits & troubleshooting
+## Error handling & troubleshooting
 
-- **Failure is silent, not an error.** Neither command raises a 4D error when generation fails — you get an empty `Picture` (`QL Create thumbnail`) or an empty `Blob` (`QL Create preview`) back instead. Always check the result (e.g. `Is picture file valid` semantics, or simply `Length(blob)=0` / `Height(picture)+Width(picture)=0`) before acting on it.
+Neither command reports failure with a 4D error signal — a failed or empty result simply comes back empty. Practical guidance:
+
+- **Failure is silent, not an error.** You get an empty `Picture` back from `QL Create thumbnail`, or an empty `Blob` back from `QL Create preview`, rather than a 4D error. Always check the result (e.g. `Length(blob)=0`, or `Height(picture)+Width(picture)=0`) before acting on it.
 - **`info` must exist before the call.** Pass an initialized object (`New object` or `{}`) as the second parameter to `QL Create preview` — a `Null` object will not be populated.
 - **Not every `info` property is always present.** Only the properties the underlying QuickLook generator actually reports for that file type get set; a plain PDF, for example, will not have an `Attachments` collection.
 - **Safari + local files.** When opening a generated `index.html`/`preview.jpg` with `OPEN URL(...; "Safari")`, Safari's *"Allow local file access"* / *Disable Local File Restrictions* setting must be enabled, or the page (and its relative-path attachments) won't load.
-- **Thumbnails always fall back to the Finder icon.** If you specifically need "did QuickLook actually render this, or did we just get the generic file icon", use `QL Create preview` instead and inspect `info`, since `QL Create thumbnail` does not expose that distinction.
-- **macOS-only, macOS 11+.** These commands rely on internal QuickLook APIs that Apple has changed across OS releases; they are not available/behave differently on Windows or on macOS versions earlier than Big Sur.
+- **Thumbnails always fall back to the Finder icon.** If you specifically need to know whether QuickLook actually rendered the file versus just returning the generic file icon, use `QL Create preview` instead and inspect `info` — `QL Create thumbnail` doesn't expose that distinction.
+- **Results vary by machine.** Since generation depends on installed QuickLook generators, don't assume a preview that works on your development Mac will look identical (or work at all) on a machine with different generators installed.
+
+---
+
+## Quick reference
+
+```4d
+ // Icon-sized thumbnail
+$thumb:=QL Create thumbnail($path)
+
+ // Full preview + metadata
+$info:=New object
+$blob:=QL Create preview($path; $info)
+Case of
+	: ($info.PreviewContentType="com.adobe.pdf")
+		$file:=pdf_preview_renderer($rootFolder; $blob; $info)
+	: ($info.MimeType="text/html")
+		$file:=html_preview_renderer($rootFolder; $blob; $info)
+End case
+```
