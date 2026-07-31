@@ -6,8 +6,6 @@
 # 4d-plugin-ql-v2
 Use QuickLook API to generate thumbnails and previews.
 
-# QL Plugin — 4D Language Reference
-
 ## Overview
 
 **QL** is a 4D plugin that lets your 4D code generate **thumbnails** and **full previews** for (almost) any file on disk — PDFs, Office documents, images, Keynote/Pages/Numbers files, source code, archives, and anything else your Mac has a QuickLook generator for — without writing a single line of file-format-specific parsing code.
