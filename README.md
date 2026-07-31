@@ -12,12 +12,6 @@ Use QuickLook API to generate thumbnails and previews.
 
 Under the hood it drives macOS's own **QuickLook** engine (the same one behind Spacebar-preview in the Finder), so if Quick Look can show it, this plugin can hand it to you as a `Picture` or a `Blob`.
 
-| | |
-|---|---|
-| **Platform** | macOS only |
-| **Minimum OS** | macOS 11 (Big Sur) or later |
-| **Commands** | `QL Create thumbnail`, `QL Create preview` |
-
 > Because it relies on Apple's QuickLook engine, results depend on which QuickLook generators are installed on the machine running the code (built‑in system generators, plus any third‑party ones the user has installed, e.g. for `.key`/`.pages`/`.numbers`, `.psd`, source code, etc.).
 
 ---
