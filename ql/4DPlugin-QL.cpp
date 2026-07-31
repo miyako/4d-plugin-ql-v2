@@ -13,9 +13,9 @@
 #pragma mark -
 
 void PluginMain(PA_long32 selector, PA_PluginParameters params) {
-    
-//	try
-//	{
+
+	@try
+	{
         switch(selector)
         {
 			// --- QL
@@ -29,11 +29,13 @@ void PluginMain(PA_long32 selector, PA_PluginParameters params) {
 
         }
 
-//	}
-//	catch(...)
-//	{
-//
-//	}
+	}
+	@catch(NSException *exception)
+	{
+		// Swallow any exception raised by the (private/undocumented) QuickLook
+		// APIs rather than letting it take down the whole 4D process.
+		NSLog(@"4DPlugin-QL: caught exception in PluginMain (selector %d): %@", (int)selector, exception);
+	}
 }
 
 #pragma mark -
@@ -45,7 +47,13 @@ CFURLRef copyPathURL(PA_Unistring *str) {
         CFStringRef path = CFStringCreateWithCharacters(kCFAllocatorDefault, (const UniChar *)str->fString, (CFIndex)str->fLength);
         if(path)
         {
-            return CFURLCreateWithFileSystemPath(kCFAllocatorDefault, path, kCFURLHFSPathStyle, false);
+            // CFURLCreateWithFileSystemPath copies the characters it needs out of
+            // 'path' - it does not take ownership of it. We created 'path' with a
+            // Create rule, so we (the caller) must release it here regardless of
+            // whether the URL creation succeeds.
+            CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, path, kCFURLHFSPathStyle, false);
+            CFRelease(path);
+            return url;
         }
     }
     
@@ -69,31 +77,46 @@ void QL_Create_thumbnail(PA_PluginParameters params) {
             CGImageRef image = QLThumbnailImageCreate(kCFAllocatorDefault, url, maxSize, options);
             if(image) {
                 CFMutableDataRef data = CFDataCreateMutable(kCFAllocatorDefault, 0);
-                CGImageDestinationRef destination = CGImageDestinationCreateWithData(data, kUTTypeTIFF, 1, NULL);
-                CFMutableDictionaryRef properties = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, NULL, NULL);
-                CGImageDestinationAddImage(destination, image, properties);
-                CGImageDestinationFinalize(destination);
-                PA_ReturnPicture(params,
-                                 PA_CreatePicture((void *)CFDataGetBytePtr(data),
-                                                  (PA_long32)CFDataGetLength(data)));
-                didReturn = true;
-                CFRelease(properties);
-                CFRelease(destination);
-                CFRelease(data);
+                CGImageDestinationRef destination = data ?
+                    CGImageDestinationCreateWithData(data, kUTTypeTIFF, 1, NULL) : NULL;
+                CFMutableDictionaryRef properties = destination ?
+                    CFDictionaryCreateMutable(kCFAllocatorDefault, 0, NULL, NULL) : NULL;
+
+                if(destination && properties) {
+                    CGImageDestinationAddImage(destination, image, properties);
+                    if(CGImageDestinationFinalize(destination)) {
+                        PA_ReturnPicture(params,
+                                         PA_CreatePicture((void *)CFDataGetBytePtr(data),
+                                                          (PA_long32)CFDataGetLength(data)));
+                        didReturn = true;
+                    }
+                }
+
+                if(properties)  CFRelease(properties);
+                if(destination) CFRelease(destination);
+                if(data)        CFRelease(data);
                 CGImageRelease(image);
-            }else{
+            }
+            
+            if(!didReturn) {
                 NSString *path = (NSString *)CFURLCopyFileSystemPath(url, kCFURLPOSIXPathStyle);
                 if(path) {
                     @autoreleasepool {
-                        NSImage *image = [[NSWorkspace sharedWorkspace]iconForFile:path];
-                        [image setSize:NSMakeSize(maxSize.width, maxSize.height)];
-                        NSData *data = [image TIFFRepresentation];
-                        PA_ReturnPicture(params, PA_CreatePicture((void *)[data bytes],
-                                                                  (PA_long32)[data length]));
-                        [path release];
+                        NSImage *icon = [[NSWorkspace sharedWorkspace]iconForFile:path];
+                        if(icon) {
+                            // iconForFile: may hand back a shared/cached NSImage instance;
+                            // resize a private copy so we don't mutate that shared object.
+                            NSImage *iconCopy = [[icon copy] autorelease];
+                            [iconCopy setSize:NSMakeSize(maxSize.width, maxSize.height)];
+                            NSData *data = [iconCopy TIFFRepresentation];
+                            if(data) {
+                                PA_ReturnPicture(params, PA_CreatePicture((void *)[data bytes],
+                                                                          (PA_long32)[data length]));
+                                didReturn = true;
+                            }
+                        }
                     }
-                    didReturn = true;
-                    
+                    [path release];
                 }
             }
             CFRelease(options);
@@ -135,12 +158,30 @@ static api_version_t get_api_version() {
 }
 
 static PA_Unistring createUnistring(NSString *str) {
-        
-    if(str) {
-        return PA_CreateUnistring((PA_Unichar *)[str cStringUsingEncoding:NSUTF16LittleEndianStringEncoding]);
+
+    if(!str) str = @"";
+
+    NSUInteger length = [str length];
+    // +1 for the NUL terminator PA_CreateUnistring expects.
+    PA_Unichar *buffer = (PA_Unichar *)malloc((length + 1) * sizeof(PA_Unichar));
+
+    if(!buffer) {
+        PA_Unichar empty = 0;
+        return PA_CreateUnistring(&empty);
     }
-    
-    return PA_CreateUnistring((PA_Unichar *)"\0\0");
+
+    // NSString's native internal representation is UTF-16, so this gives us
+    // the exact code units - unlike -cStringUsingEncoding:, which truncates
+    // at the first embedded 0x00 byte (i.e. after the very first ASCII
+    // character when encoded as UTF-16LE) and leads PA_CreateUnistring to
+    // read past the end of that (much shorter than expected) buffer.
+    [str getCharacters:(unichar *)buffer range:NSMakeRange(0, length)];
+    buffer[length] = 0;
+
+    PA_Unistring result = PA_CreateUnistring(buffer);
+    free(buffer);
+
+    return result;
 }
 
 static void ob_set_s(PA_ObjectRef obj, NSString *_key, NSString *_value) {
@@ -153,6 +194,7 @@ static void ob_set_s(PA_ObjectRef obj, NSString *_key, NSString *_value) {
         PA_SetStringVariable(&v, &value);
         PA_SetObjectProperty(obj, &key, v);
         PA_DisposeUnistring(&key);
+        PA_DisposeUnistring(&value);
         PA_ClearVariable(&v);
         
     }
@@ -285,7 +327,10 @@ static void ql_get_properties(CFDictionaryRef properties, PA_ObjectRef arg2) {
                        || ([cid hasSuffix:@".js"])
                        || ([cid hasSuffix:@".html"])){
                         
-                        NSStringEncoding ie = CFStringConvertEncodingToNSStringEncoding(CFStringConvertIANACharSetNameToEncoding((CFStringRef)encoding));
+                        NSStringEncoding ie = encoding ?
+                            CFStringConvertEncodingToNSStringEncoding(CFStringConvertIANACharSetNameToEncoding((CFStringRef)encoding)) :
+                            NSUTF8StringEncoding;
+                        if(ie == kCFStringEncodingInvalidId) ie = NSUTF8StringEncoding;
                         NSString *text = [[NSString alloc]initWithData:data encoding:ie];
                         if(text) {
                             ob_set_s(objAttachment, @"data", text);
