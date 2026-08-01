@@ -47,47 +47,14 @@ jobs:
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
 
-  build-windows:
-    name: Build Windows (x64)
-    needs: version
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.version.outputs.tag }}
-
-      - name: setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-
-      # GitHub-hosted windows-latest ships VS2022 (v143 toolset) but not the
-      # legacy v140 toolset the project is pinned to, so we override it on
-      # the command line rather than requiring an extra VS component install.
-      - name: build x64
-        shell: cmd
-        run: msbuild "${{ env.VCX_SOLUTION }}" /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /m
-
-      - name: upload windows binaries
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-binaries
-          path: |
-            test/Plugins/${{ env.PRODUCT_NAME }}.bundle/Contents/Windows64/${{ env.PRODUCT_NAME }}.4DX
-          if-no-files-found: error
-
   build-macos:
     name: Build macOS, package, sign, notarize & release
-    needs: [version, build-windows]
+    needs: [version]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.version.outputs.tag }}
-
-      - name: download windows binaries
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-binaries
-          path: winbuild
 
       - name: import Developer ID certificate
         env:
@@ -135,17 +102,11 @@ jobs:
       - name: verify universal binary
         run: |
           set -euo pipefail
-          BIN="test/Plugins/${{ env.PRODUCT_NAME }}.bundle/Contents/MacOS/${{ env.PRODUCT_NAME }}"
+          BUNDLE_PATH="test/Plugins/${{ env.PRODUCT_NAME }}.bundle"
+          BIN="$BUNDLE_PATH/Contents/MacOS/${{ env.PRODUCT_NAME }}"
           lipo -info "$BIN"
           lipo -info "$BIN" | grep -q "arm64" && lipo -info "$BIN" | grep -q "x86_64"
-
-      - name: merge Windows binaries into the bundle
-        run: |
-          set -euo pipefail
-          BUNDLE="test/Plugins/${{ env.PRODUCT_NAME }}.bundle"
-          mkdir -p "$BUNDLE/Contents/Windows64"
-          cp "winbuild/${{ env.PRODUCT_NAME }}.4DX" "$BUNDLE/Contents/Windows64/${{ env.PRODUCT_NAME }}.4DX"
-          echo "BUNDLE_PATH=$BUNDLE" >> "$GITHUB_ENV"
+          echo "BUNDLE_PATH=$BUNDLE_PATH" >> "$GITHUB_ENV"
 
       - name: codesign
         run: |
