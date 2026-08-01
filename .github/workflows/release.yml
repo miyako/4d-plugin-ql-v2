@@ -23,9 +23,9 @@ permissions:
 
 env:
   # ---- edit these per-project, everything else is generic ----
-  PRODUCT_NAME: Simple PostgreSQL Client
-  XCODE_PROJECT: Simple PostgreSQL Client.xcodeproj
-  VCX_SOLUTION: Simple PostgreSQL Client.sln
+  PRODUCT_NAME: QL
+  XCODE_PROJECT: QL.xcodeproj
+  VCX_SOLUTION: QL.sln
   MACOS_DEPLOYMENT_TARGET: '10.13'
   # --------------------------------------------------------------
 

@@ -24,7 +24,7 @@ permissions:
 
 env:
   # ---- edit these two per-project ----
-  XCODE_PROJECT: Simple PostgreSQL Client.xcodeproj
+  XCODE_PROJECT: QL.xcodeproj
   # -------------------------------------
 
 jobs:
