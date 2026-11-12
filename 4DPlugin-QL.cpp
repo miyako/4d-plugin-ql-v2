@@ -190,11 +190,13 @@ static void ob_set_s(PA_ObjectRef obj, NSString *_key, NSString *_value) {
         
         PA_Unistring key = createUnistring(_key);
         PA_Unistring value = createUnistring(_value);
-        PA_Variable v = PA_CreateVariable(eVK_Unistring);
+        // PA_SetStringVariable is a shallow set: v takes ownership of value,
+        // so PA_ClearVariable(&v) is its only dispose. Start from
+        // eVK_Undefined so no empty string is allocated and then leaked.
+        PA_Variable v = PA_CreateVariable(eVK_Undefined);
         PA_SetStringVariable(&v, &value);
         PA_SetObjectProperty(obj, &key, v);
         PA_DisposeUnistring(&key);
-        PA_DisposeUnistring(&value);
         PA_ClearVariable(&v);
         
     }
@@ -287,7 +289,9 @@ void ob_set_i(PA_ObjectRef obj, NSString *_key, PA_Picture value) {
         if(value)
         {
             PA_Unistring key = createUnistring(_key);
-            PA_Variable v = PA_CreateVariable(eVK_Picture);
+            // eVK_Undefined: eVK_Picture would allocate an empty picture that
+            // the shallow PA_SetPictureVariable below overwrites and leaks.
+            PA_Variable v = PA_CreateVariable(eVK_Undefined);
             PA_SetPictureVariable(&v, value);
             PA_SetObjectProperty(obj, &key, v);
             PA_DisposeUnistring(&key);
@@ -298,11 +302,12 @@ void ob_set_i(PA_ObjectRef obj, NSString *_key, PA_Picture value) {
 
 static void ql_get_properties(CFDictionaryRef properties, PA_ObjectRef arg2) {
     
-    if(properties) {
-        
-        PA_CollectionRef colAttachments = PA_CreateCollection();
+    // Without arg2 nothing is stored, so nothing may be created: the
+    // attachments collection is only released by ob_set_c into arg2.
+    if((properties) && (arg2)) {
         
         if(CFDictionaryContainsKey(properties, kQLPreviewPropertyAttachmentsKey)) {
+            PA_CollectionRef colAttachments = PA_CreateCollection();
             CFDictionaryRef attachments = (CFDictionaryRef)CFDictionaryGetValue(properties, kQLPreviewPropertyAttachmentsKey);
             [(NSDictionary *)attachments enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
                 
